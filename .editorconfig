@@ -1,0 +1,12 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+
+[*.java]
+indent_style = tab
+
+[pom.xml]
+indent_style = tab
