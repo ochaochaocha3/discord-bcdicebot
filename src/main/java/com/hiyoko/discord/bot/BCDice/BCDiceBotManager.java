@@ -71,7 +71,7 @@ public class BCDiceBotManager {
 			bot = new StoppableBCDiceBot(token, bcdiceUrl, errorSensitive, password);
 			try {
 				botFuture = bot
-						.Execute()
+						.execute()
 						.exceptionally(e -> {
 							bot.logger.error(String.format("Could not log in to Discord: %s", e.getMessage()));
 

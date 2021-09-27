@@ -11,6 +11,7 @@ import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.message.MessageAttachment;
 import org.javacord.api.entity.message.MessageAuthor;
+import org.javacord.api.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,8 +24,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-
-import sun.misc.Signal;
 
 /**
  * First kicked class for discord-bcdicebot.
@@ -85,7 +84,7 @@ public class StoppableBCDiceBot {
 		}
 	}
 
-	public CompletableFuture<Object> Execute() throws IOException {
+	public CompletableFuture<Object> execute() throws IOException {
 		futureForExecute = new CompletableFuture<>();
 
 		BCDiceCLI bcDice = new BCDiceCLI(getUrlList(bcDiceUrl), getDefaultSystem(), errorSensitive, password);
@@ -193,6 +192,121 @@ public class StoppableBCDiceBot {
 		return futureForExecute;
 	}
 
+	public interface BotExecuteCallbacks {
+		void onLogin();
+		void onLoginFailure(Throwable e);
+		void onDisconnect(Event event);
+	}
+
+	public void executeAndNotifyLoggedIn(BotExecuteCallbacks callbacks) throws IOException {
+		BCDiceCLI bcDice = new BCDiceCLI(getUrlList(bcDiceUrl), getDefaultSystem(), errorSensitive, password);
+		NameIndicator nameIndicator = NameIndicatorFactory.getNameIndicator();
+		DiceResultFormatter diceResultFormatter = DiceResultFormatterFactory.getDiceResultFormatter();
+
+		CompletableFuture<DiscordApi> loginFuture = new DiscordApiBuilder()
+				// .setShutdownHookRegistrationEnabled(false)
+				.setToken(token)
+				.login();
+
+		loginFuture.exceptionally(e -> {
+			callbacks.onLoginFailure(e);
+			return null;
+		});
+
+		loginFuture.thenAccept(api -> {
+			discordApi = api;
+
+			callbacks.onLogin();
+
+			String myId = api.getYourself().getIdAsString();
+			ChatToolClient chatToolClient = ChatToolClientFactory.getChatToolClient(api);
+
+			api.addLostConnectionListener(event -> {
+				if (!isDisconnecting) {
+					return;
+				}
+
+				callbacks.onDisconnect(event);
+			});
+
+			api.addMessageCreateListener(event -> {
+				String channel = event.getChannel().getIdAsString();
+				MessageAuthor user = event.getMessageAuthor();
+				String name = nameIndicator.getName(user);
+				String userId = user.getIdAsString();
+				String message = event.getMessage().getContent();
+				List<MessageAttachment> attachments = event.getMessage().getAttachments();
+				try {
+					logger.debug(String.format("%s posts: https://discordapp.com/channels/%s/%s/%s",
+							userId,
+							event.getServer().get().getIdAsString(), channel, event.getMessage().getIdAsString()));
+				} catch(NoSuchElementException e) {
+					logger.debug(String.format("%s posts in DM", userId));
+				}
+
+				api.updateActivity("bcdice help とチャットに打ち込むとコマンドのヘルプを確認できます");
+				if( myId.equals(userId) ) { return; }
+				if(chatToolClient.isRequest( message )) {
+					List<String> result = chatToolClient.input(message);
+					if(! result.isEmpty()) {
+						bcDice.separateStringWithLengthLimitation(result, 1000).forEach(p->event.getChannel().sendMessage(p));
+						return;
+					}
+				}
+				if(! bcDice.isRoll( message )) {
+					bcDice.inputs(message, userId, channel, attachments).forEach(msg->{
+						event.getChannel().sendMessage(chatToolClient.formatMessage(msg));
+					});
+					return;
+				}
+
+				try {
+					List<DicerollResult> rollResults = bcDice.rolls(message, channel);
+					if(rollResults.size() > 0) {
+						logger.debug("Dice command request for dice server is done");
+						List<String> sb = new ArrayList<String>();
+						for(DicerollResult rollResult : rollResults) {
+							if(rollResult.isError()) {
+								throw new IOException(rollResult.getText());
+							}
+							if( rollResult.isRolled() ) {
+								sb.add(diceResultFormatter.getText(rollResult));
+							}
+						}
+						List<String> resultMessage = bcDice.separateStringWithLengthLimitation(String.format("＞%s\n%s", name, sb.stream().collect(Collectors.joining("\n\n"))), 1000);
+						DicerollResult firstOne = rollResults.get(0);
+						if( firstOne.isSecret() ) {
+							String index = bcDice.saveMessage(userId, resultMessage);
+							event.getChannel().sendMessage(chatToolClient.formatMessage(String.format("＞%s\n%s",
+									name,
+									diceResultFormatter.getText(new DicerollResult(
+											String.format("[Secret Dice] Key: %s", index),
+											firstOne.getSystem(),
+											true, true
+									)))));
+							try {
+								for(String post : resultMessage) {
+									api.getUserById(userId).get().sendMessage(chatToolClient.formatMessage(post));
+								}
+								api.getUserById(userId).get().sendMessage(String.format("この結果を呼び出すには次のようにしてください。\n> bcdice load %s\nこのコマンドは最短72時間後には無効になります\nその後も必要であればそのままコピー&ペーストするか、スクリーンショットなどで共有してください", index));
+							} catch (InterruptedException | ExecutionException e) {
+								throw new IOException(e.getMessage(), e);
+							}
+						} else {
+							resultMessage.forEach((post)->{
+								event.getChannel().sendMessage(chatToolClient.formatMessage(post));
+							});
+						}
+					}
+				} catch (IOException e) {
+					event.getChannel().sendMessage(String.format("＞%s\n[ERROR]%s", name, e.getMessage()));
+					logger.warn(String.format("USERID: %s MESSAGE: %s", userId, message));
+					logger.warn("Failed to reply to user request", e);
+				}
+			});
+		});
+	}
+
 	public boolean disconnect() {
 		if (discordApi == null || isDisconnecting) {
 			return false;
@@ -242,7 +356,7 @@ public class StoppableBCDiceBot {
 		boolean errorSensitive = args.length < 3 || args[2].trim().equals("0");
 		StoppableBCDiceBot bot = new StoppableBCDiceBot(args[0].trim(), args[1].trim(), errorSensitive, password);
 
-		CompletableFuture<Object> f = bot.Execute();
+		CompletableFuture<Object> f = bot.execute();
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			if (!f.isDone()) {
