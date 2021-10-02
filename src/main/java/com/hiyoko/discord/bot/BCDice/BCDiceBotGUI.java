@@ -32,8 +32,6 @@ public class BCDiceBotGUI extends Application {
 
 		stage.setScene(botRunnerScene);
 		stage.setTitle("discord-bcdicebot");
-		stage.setMinWidth(500);
-		stage.setMinHeight(200);
 		stage.sizeToScene();
 
 		stage.setOnCloseRequest(event -> {
@@ -57,6 +55,9 @@ public class BCDiceBotGUI extends Application {
 		});
 
 		stage.show();
+
+		stage.setMinWidth(stage.getWidth());
+		stage.setMinHeight(stage.getHeight());
 	}
 
 	private static String getVersion() {
