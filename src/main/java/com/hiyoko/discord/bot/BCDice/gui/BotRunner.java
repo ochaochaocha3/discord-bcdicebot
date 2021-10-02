@@ -16,6 +16,7 @@ import org.javacord.api.event.Event;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
@@ -32,12 +33,16 @@ public class BotRunner implements Initializable {
 	}
 
 	public static SceneAndController getScene() throws IOException {
-		var loader = new FXMLLoader(BotRunner.class.getResource("/gui/BotRunner.fxml"));
-		Parent parent = loader.load();
+		var fxmlLoader = new FXMLLoader(BotRunner.class.getResource("/gui/BotRunner.fxml"));
+		Parent parent = fxmlLoader.load();
 
-		BotRunner controller = loader.getController();
+		BotRunner controller = fxmlLoader.getController();
 
-		return new SceneAndController(new Scene(parent), controller);
+		var scene = new Scene(parent);
+		String commonCss = Objects.requireNonNull(BotRunner.class.getResource("/gui/common.css")).toExternalForm();
+		scene.getStylesheets().add(commonCss);
+
+		return new SceneAndController(scene, controller);
 	}
 
 	final private BotExecuteCallbacks botExecuteCallbacks = new BotExecuteCallbacks(this);

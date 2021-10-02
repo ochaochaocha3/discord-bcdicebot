@@ -5,45 +5,81 @@
 <?import javafx.scene.control.ButtonBar?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
-
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
 <BorderPane xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.hiyoko.discord.bot.BCDice.gui.BotRunner">
-   <top>
-      <GridPane hgap="10.0" BorderPane.alignment="CENTER">
-         <columnConstraints>
-            <ColumnConstraints hgrow="NEVER" minWidth="150.0" prefWidth="150.0" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="300.0" prefWidth="300.0" />
-         </columnConstraints>
-         <rowConstraints>
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-         </rowConstraints>
-         <children>
-            <Label fx:id="tokenLabel" text="ボットのトークン" GridPane.columnSpan="2" />
-            <TextField fx:id="tokenTextField" GridPane.columnIndex="1" />
-            <Label fx:id="bcdiceUrlLabel" text="BCDice-APIサーバURL" GridPane.columnSpan="2" GridPane.rowIndex="1" />
-            <TextField fx:id="bcdiceUrlTextField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <CheckBox fx:id="ignoreErrorCheckBox" mnemonicParsing="false" text="エラーを無視する" GridPane.columnSpan="2" GridPane.rowIndex="3" />
-            <Label fx:id="passwordLabel" text="パスワード" GridPane.rowIndex="2" />
-            <TextField fx:id="passwordTextField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-         </children>
-      </GridPane>
-   </top>
    <bottom>
-      <ButtonBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+      <ButtonBar BorderPane.alignment="CENTER">
          <buttons>
             <Button fx:id="connectDisconnectButton" defaultButton="true" mnemonicParsing="false" onAction="#connectDisconnectButtonOnAction" text="接続/切断" />
          </buttons>
+         <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </padding>
       </ButtonBar>
    </bottom>
-   <padding>
-      <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-   </padding>
+   <top>
+      <VBox BorderPane.alignment="CENTER">
+         <children>
+            <HBox alignment="CENTER_LEFT" style="-fx-background-color: #fff;" VBox.vgrow="NEVER">
+               <children>
+                  <ImageView fitHeight="56.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@bcdice.png" />
+                     </image>
+                     <HBox.margin>
+                        <Insets right="10.0" />
+                     </HBox.margin>
+                  </ImageView>
+                  <Label text="Discord BCDice Bot">
+                     <font>
+                        <Font size="28.0" />
+                     </font>
+                  </Label>
+               </children>
+               <padding>
+                  <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
+               </padding>
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets>
+            </HBox>
+            <Separator prefWidth="200.0" />
+            <GridPane hgap="10.0">
+               <columnConstraints>
+                  <ColumnConstraints hgrow="NEVER" minWidth="150.0" prefWidth="150.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="300.0" prefWidth="300.0" />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+               </rowConstraints>
+               <children>
+                  <Label fx:id="tokenLabel" text="ボットのトークン" GridPane.columnSpan="2" />
+                  <TextField fx:id="tokenTextField" GridPane.columnIndex="1" />
+                  <Label fx:id="bcdiceUrlLabel" text="BCDice-APIサーバURL" GridPane.columnSpan="2" GridPane.rowIndex="1" />
+                  <TextField fx:id="bcdiceUrlTextField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="ignoreErrorCheckBox" mnemonicParsing="false" text="エラーを無視する" GridPane.columnSpan="2" GridPane.rowIndex="3" />
+                  <Label fx:id="passwordLabel" text="パスワード" GridPane.rowIndex="2" />
+                  <TextField fx:id="passwordTextField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+               </children>
+               <VBox.margin>
+                  <Insets left="20.0" right="20.0" top="20.0" />
+               </VBox.margin>
+            </GridPane>
+         </children>
+      </VBox>
+   </top>
 </BorderPane>
